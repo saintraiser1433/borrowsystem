@@ -1,19 +1,39 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import HomeView from '../views/HomeView.vue'
-
 const routes = [
   {
     path: '/',
-    name: 'home',
-    component: HomeView
+    name: 'Dashboard',
+    component: () => import(/* webpackChunkName: "dashboard" */ '@/views/Dashboard.vue'),
+    meta: { title: 'Dashboard',subtitle: 'Lorem ipsum dolor sit amet consectetur adipisicing elit. ' },
   },
   {
-    path: '/about',
-    name: 'about',
-    // route level code-splitting
-    // this generates a separate chunk (about.[hash].js) for this route
-    // which is lazy-loaded when the route is visited.
-    component: () => import(/* webpackChunkName: "about" */ '../views/AboutView.vue')
+    path: '/student',
+    name: 'Student',
+    component: () => import(/* webpackChunkName: "students" */ '@/views/Students.vue'),
+    meta: { title: 'Manage Student',subtitle: 'Lorem ipsum dolor sit amet consectetur adipisicing elit. ' },
+  },
+  {
+    path: '/inventory',
+    name: 'Inventory',
+    component: () => import(/* webpackChunkName: "inventory" */ '@/views/Inventory.vue'),
+    meta: { title: 'Manage Inventory',subtitle: 'This panel represents list of assets available in science laboratory ' },
+  },
+  {
+    path: '/returned',
+    name: 'Returned',
+    component: () => import(/* webpackChunkName: "returned" */ '@/views/Returned.vue'),
+    meta: { title: 'Manage Returned Item',subtitle: 'Lorem ipsum dolor sit amet consectetur adipisicing elit. ' },
+  },
+  {
+    path: '/transaction',
+    name: 'Transaction',
+    component: () => import(/* webpackChunkName: "transaction" */ '@/views/Transactions.vue'),
+    meta: { title: 'Manage Transaction',subtitle: 'Lorem ipsum dolor sit amet consectetur adipisicing elit. ' },
+  },{
+    path: '/report',
+    name: 'Report',
+    component: () => import(/* webpackChunkName: "reports" */ '@/views/Reports.vue'),
+    meta: { title: 'Manage Report',subtitle: 'Lorem ipsum dolor sit amet consectetur adipisicing elit. ' },
   }
 ]
 
