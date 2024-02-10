@@ -5,7 +5,7 @@
                 <TitleBar />
             </v-col>
             <v-col cols="auto">
-                <Popup :title="title" btnName="Add Items" @toggleModal="toggleModal" v-model="isActive">
+                <Popup :title="ModalTitle" btnName="Add Assets" @toggleModal="openModal" v-model="isActive">
                     <template #body>
                         <v-form @submit.prevent="onSubmit">
                             <v-row>
@@ -14,10 +14,13 @@
                                         <div class="text-h5 font-weight-bold text-center text-dark">IMAGE PHOTO</div>
                                         <v-divider class="mb-2"></v-divider>
                                         <v-img :width="300" :aspect-ratio="1" cover class="img-border mx-auto mb-2"
-                                            src="https://cdn.vuetifyjs.com/images/parallax/material.jpg">
-                                        </v-img>
+                                            :src="filePreview"></v-img>
+                                        <v-file-input class="d-none" ref="uploader"
+                                            accept="image/png, image/jpeg, image/bmp" @change="uploadFile">
+                                        </v-file-input>
                                         <div class="text-center">
-                                            <v-btn prepend-icon="mdi-check-circle" flat class="bg-primary">
+                                            <v-btn prepend-icon="mdi-check-circle" flat class="bg-primary"
+                                                @click="clickFile">
                                                 <template v-slot:prepend>
                                                     <v-icon>mdi-account-circle</v-icon>
                                                 </template>
@@ -60,22 +63,24 @@
                                         <v-col cols="12" sm="12" md="6">
                                             <div class="text-subtitle-1 text-medium-emphasis">Condition</div>
                                             <v-select :items="conditionItem" density="compact" variant="outlined"
-                                                v-model="itemModel.value.value"
-                                                :error-messages="itemModel.errorMessage.value">
+                                                v-model="itemCondition.value.value"
+                                                :error-messages="itemCondition.errorMessage.value">
                                             </v-select>
                                         </v-col>
 
                                         <v-col cols="12" sm="12" md="6">
                                             <div class="text-subtitle-1 text-medium-emphasis">Status</div>
                                             <v-select :items="statusItem" density="compact" variant="outlined"
+                                                item-title="description" item-value="id"
                                                 v-model="statusDescription.value.value"
                                                 :error-messages="statusDescription.errorMessage.value">
                                             </v-select>
                                         </v-col>
                                         <v-col cols="12" sm="12" md="12">
                                             <div class="text-subtitle-1 text-medium-emphasis">Description</div>
-                                            <v-textarea density="compact"  variant="outlined"  
-                                            v-model="description.value.value"></v-textarea>
+                                            <v-textarea density="compact" variant="outlined"
+                                                v-model="description.value.value"
+                                                :error-messages="description.errorMessage.value"></v-textarea>
                                         </v-col>
                                     </v-row>
                                 </v-col>
@@ -116,21 +121,28 @@
     
 
 <script setup>
-import TitleBar from '@/components/TitleBar.vue';
-import Popup from '@/components/Popup.vue';
-import { condition, status } from '@/constants/Inventory/selection';
-import { tableHeaders } from '@/constants/Inventory/headers';
-import { ref, defineAsyncComponent } from 'vue';
+import TitleBar from '@/components/TitleBar.vue'
+import Popup from '@/components/Popup.vue'
+import { condition, status } from '@/constants/Inventory/selection'
+import { tableHeaders } from '@/constants/Inventory/headers'
+import { ref, defineAsyncComponent } from 'vue'
 import { useForm, useField } from 'vee-validate'
+import { useFileUploader } from '@/composable/useFileUploader'
+import { useModal } from '@/composable/useModal'
+import { api } from '@/axios/axios'
 import * as yup from 'yup'
-const InventoryTable = defineAsyncComponent({
-    loader: () => import('@/components/Table.vue')
-})
-const title = ref('')
-const isActive = ref(false)
+
 const conditionItem = ref(condition)
 const statusItem = ref(status)
 const header = ref(tableHeaders)
+const uploader = ref(null);
+
+const InventoryTable = defineAsyncComponent({
+    loader: () => import('@/components/Table.vue')
+})
+
+const { ModalTitle, isActive, openModal, closeModal } = useModal('Assets')
+const { filePreview, filePath, uploadFile } = useFileUploader(isActive)
 const yupSchema = yup.object({
     asset_tag: yup.number().required(),
     item_name: yup.string().required(),
@@ -139,10 +151,10 @@ const yupSchema = yup.object({
     item_condition: yup.string().required(),
     status: yup.number().required(),
     description: yup.string().required(),
-    img_path: yup.string().required(),
+    img_path: yup.string()
 });
 
-const { handleSubmit } = useForm({
+const { handleSubmit, setValues } = useForm({
     validationSchema: yupSchema
 });
 
@@ -153,20 +165,24 @@ const itemModel = useField('item_model');
 const itemCondition = useField('item_condition');
 const statusDescription = useField('status');
 const description = useField('description');
-const imgPath = useField('img_path');
+setValues('img_path', filePath.value)
 
-function toggleModal() {
-    title.value = "Insert Science Lab Inventory"
-    isActive.value = true
+const clickFile = () => {
+    uploader.value.click();
 }
 
-function closeModal() {
-    isActive.value = false
-}
-
-function onSubmit() {
-
-}
+const onSubmit = handleSubmit(async (values) => {
+   
+    const response = await api({
+        method:'POST',
+        api:'inventory',
+        data: values
+    })
+    if (!response.ok) {
+        alert(response.error.data.messages.error); // Corrected alert function call
+        return false;
+    }
+});
 
 
 
