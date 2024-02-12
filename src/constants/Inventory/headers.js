@@ -1,7 +1,8 @@
 import { ref } from 'vue'
 
-export const tableHeaders = ref([
-    { title: 'Image', align: 'center', key: 'image_path', sortable: true },
+export const headerInventory = ref([
+    { title: 'Image', align: 'center', key: 'img_path' },
+    // { title: 'path', align: 'center', key: 'img_path'},
     { title: 'Asset Tag', align: 'start', key: 'asset_tag', sortable: true },
     { title: 'Item Name', align: 'start', key: 'item_name', sortable: true },
     { title: 'Category', align: 'start', key: 'category_id', sortable: true },
@@ -12,4 +13,13 @@ export const tableHeaders = ref([
     { title: 'Actions', align: 'start', key: 'actions', sortable: true }
 
 ]);
+
+export const headerCategory = ref([
+    { title: 'Category Description', align: 'center', key: 'description' },
+    { title: 'Status', align: 'center', key: 'status' },
+    { title: 'Actions', align: 'start', key: 'actions', sortable: true }
+]);
+
+
+
 

@@ -1,45 +1,27 @@
 import axios from "axios";
-export function useAxios(url) {
-    const http = axios.create({
-        baseURL: "http://localhost:8383/borrowing-api/inventory/",
-        headers: {
-            "Content-type": "application/json",
-        },
+import { development } from "@/constants/server";
+/**
+ * Basic HTTP response status code
+ * Success response status code
+ * 201 and 200
+ * Error code response status code
+ * 400,500,401,422 and 403
+ */
+
+export async function useAxios({ ...args }) {
+  try {
+    const response = await axios({
+      method: args.method,
+      data: args.data,
+      params: args.params,
+      headers: {
+        ...args.header,
+      },
+      baseURL: development.baseUrl + args.api,
     });
 
-   async function fetchData() {
-        return await http.get(`${url}?action=GET`);
-    }
-
-    async function addData(post) {
-        return await http.post(`${url}?action=POST`, post);
-    }
-
-    async function updateData(post) {
-         return await http.post(`${url}?action=PUT`, post);
-    }
-
-    async function deleteData(id) {
-        return await http.delete(`${url}?action=DELETE`, {
-            params: {
-                id: id,
-            },
-        });
-    }
-
-    return {
-        fetchData,
-        addData,
-        updateData,
-        deleteData
-    }
-
-    // function getDataById(id) {
-    //     return http.get(`/data/${id}`);
-    // }
-
-
+    return { ok: true, data: response.data };
+  } catch (error) {
+    return { ok: false, error: error.message };
+  }
 }
-
-
-
