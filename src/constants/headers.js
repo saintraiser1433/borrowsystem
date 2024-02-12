@@ -1,7 +1,8 @@
 import { ref } from 'vue'
 
 export const tableHeaders = ref([
-    { title: 'Image', align: 'center', key: 'image_path', sortable: true },
+    { title: 'Image', align: 'center', key: 'img_path' },
+    // { title: 'path', align: 'center', key: 'img_path'},
     { title: 'Asset Tag', align: 'start', key: 'asset_tag', sortable: true },
     { title: 'Item Name', align: 'start', key: 'item_name', sortable: true },
     { title: 'Category', align: 'start', key: 'category_id', sortable: true },

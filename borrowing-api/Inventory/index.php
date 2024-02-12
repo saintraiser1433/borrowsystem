@@ -15,40 +15,69 @@ $json_data = file_get_contents("php://input");
 $data = json_decode($json_data, true);
 switch ($action) {
     case 'GET':
-        $sql = "SELECT asset_tag,item_name,category_id,item_model,item_condition,status,description,img_path FROM inventory";
-        $rs = $conn->query($sql);
-        $data = [];
-
-        if ($rs) {
-            while ($row = $rs->fetch_assoc()) {
-                // Assuming your resident table has 'id', 'name', and 'age' columns
-                $data[] = [
-                    'asset_tag' => $row['asset_tag'],
-                    'item_name' => $row['item_name'],
-                    'category_id' => $row['category_id'],
-                    'item_model' => $row['item_model'],
-                    'item_condition' => $row['item_condition'],
-                    'status' => $row['status'],
-                    'description' => $row['description'],
-                    'img_path' => $row['img_path'],
-                ];
+        if (isset($_GET['asset_tag'])) {
+            $id = $_GET['asset_tag'];
+            $sql = "SELECT asset_tag,item_name,category_id,item_model,item_condition,status,description,img_path FROM tbl_inventory where asset_tag = $0z ";
+            $rs = $conn->query($sql);
+            $data = [];
+            if ($rs) {
+                while ($row = $rs->fetch_assoc()) {
+                    // Assuming your resident table has 'id', 'name', and 'age' columns
+                    $data[] = [
+                        'asset_tag' => $row['asset_tag'],
+                        'item_name' => $row['item_name'],
+                        'category_id' => $row['category_id'],
+                        'item_model' => $row['item_model'],
+                        'item_condition' => $row['item_condition'],
+                        'status' => $row['status'],
+                        'description' => $row['description'],
+                        'img_path' => $row['img_path'],
+                    ];
+                }
+                echo json_encode($data);
             }
+        } else {
+            $sql = "SELECT asset_tag,item_name,category_id,item_model,item_condition,status,description,img_path FROM tbl_inventory ";
+            $rs = $conn->query($sql);
+            $data = [];
+
+            if ($rs) {
+                while ($row = $rs->fetch_assoc()) {
+                    // Assuming your resident table has 'id', 'name', and 'age' columns
+                    $data[] = [
+                        'asset_tag' => $row['asset_tag'],
+                        'item_name' => $row['item_name'],
+                        'category_id' => $row['category_id'],
+                        'item_model' => $row['item_model'],
+                        'item_condition' => $row['item_condition'],
+                        'status' => $row['status'],
+                        'description' => $row['description'],
+                        'img_path' => $row['img_path'],
+                    ];
+                }
+            }
+            echo json_encode($data);
         }
-        echo json_encode($data);
         break;
     case 'POST':
-        // Assuming you pass the resident_id in the request
-        $asset_tag = $data['asset_tag'];
-        $item_name = $data['item_name'];
-        $category_id = $data['category_id'];
-        $item_model = $data['item_model'];
-        $item_condition = $data['item_condition'];
-        $description = $data['description'];
-        $img_path = $data['img_path'];
-        $status = $data['status'];
-        $query = "INSERT INTO inventory (asset_tag,item_name,category_id,item_model,item_condition,description,img_path,status) 
-        values ($asset_tag,'$item_name',$category_id,'$item_model','$item_condition','$description','$img_path',$status)";
-        $stmt = $conn->query($sql);
+        $fetch = json_decode($_POST['data'], true);
+        $asset_tag = $fetch['asset_tag'];
+        $item_name = $fetch['item_name'];
+        $category_id = $fetch['category_id'];
+        $item_model = $fetch['item_model'];
+        $item_condition = $fetch['item_condition'];
+        $description = $fetch['description'];
+        $status = $fetch['status'];
+        if (empty($_FILES) || !isset($_FILES['files'])) {
+            $dir = "NULL"; // Set to NULL keyword
+        } else {
+            $pth = $fetch['img_path'] . ".png";
+            $dir = "'" . $fetch['img_path'] . ".png'";
+            move_uploaded_file($_FILES['files']['tmp_name'], $pth);
+        }
+        $query = "INSERT INTO tbl_inventory (asset_tag,item_name,category_id,item_model,item_condition,description,img_path,status) 
+        values ($asset_tag,'$item_name',$category_id,'$item_model','$item_condition','$description',$dir,$status)";
+        $stmt = $conn->query($query);
         if ($stmt) {
             echo json_encode(['message' => 'Asset added successfully']);
         } else {
@@ -56,41 +85,48 @@ switch ($action) {
         }
         break;
     case 'PUT':
-        $resident_id = $data['resident_id'];
-        $fname = $data['fname'];
-        $mname = $data['mname'];
-        $lname = $data['lname'];
-        $suffix = $data['suffix'];
-        $bdate = $data['bdate'];
-        $citizen = $data['citizenship'];
-        $age = $data['age'];
-        $sex = $data['sex'];
-        $religon = $data['religion'];
-        $occupation = $data['occupation'];
-        $contact = $data['cont_no'];
-        $status = $data['status'];
-        $voter = $data['purok'];
-        $address = $data['address'];
-        $sql = "UPDATE resident SET fname=?,mname=?,lname=?,suffix=?,bdate=?,age=?,sex=?,religion=?,citizenship=?,status=?,occupation=?,cont_no=?,purok=?,address=? where resident_id=?";
-        $stmt = $conn->prepare($sql);
-        $stmt->bind_param("sssssisssssssss", $fname, $mname, $lname, $suffix, $bdate, $age, $sex, $religon, $citizen, $status, $occupation, $contact, $voter, $address, $resident_id);
-        $stmt->execute();
-
-        if ($stmt) {
-            echo json_encode(['message' => 'Resident updated successfully']);
+        $pth = $fetch['img_path'] . ".png";
+        $dir = "'" . $fetch['img_path'] . ".png'";
+        $fetch = json_decode($_POST['data'], true);
+        $asset_tag = $fetch['asset_tag'];
+        $item_name = $fetch['item_name'];
+        $category_id = $fetch['category_id'];
+        $item_model = $fetch['item_model'];
+        $item_condition = $fetch['item_condition'];
+        $description = $fetch['description'];
+        $status = $fetch['status'];
+        if (empty($_FILES) || !isset($_FILES['files'])) {
+            $dir = "NULL"; // Set to NULL keyword
         } else {
-            echo json_encode(['error' => 'Failed to update resident']);
+            $pth = $fetch['img_path'] . ".png";
+            $dir = "'" . $fetch['img_path'] . ".png'";
+            move_uploaded_file($_FILES['files']['tmp_name'], $pth);
+        }
+        $query = "UPDATE tbl_inventory SET 
+        item_name='$item_name',
+        category_id=$category_id,
+        item_model='$item_model',
+        item_condition='$item_condition',
+        description='$description',
+        img_path=$dir,
+        status=$status
+        where asset_tag=$asset_tag";
+        $stmt = $conn->query($query);
+        if ($stmt) {
+            echo json_encode(['message' => 'Asset updated successfully']);
+        } else {
+            echo json_encode(['error' => 'Failed to update asset']);
         }
         break;
     case 'DELETE':
-        $resident_id = $_GET['id'];
-        $sqlDelete = "DELETE FROM resident WHERE resident_id = '$resident_id'";
+        $assettag = $_GET['asset_tag'];
+        $sqlDelete = "DELETE FROM tbl_inventory WHERE asset_tag = '$assettag'";
         $result = $conn->query($sqlDelete);
 
         if ($result) {
-            echo json_encode(['message' => 'Resident deleted successfully']);
+            echo json_encode(['message' => 'Item deleted successfully']);
         } else {
-            echo json_encode(['error' => 'Failed to delete resident']);
+            echo json_encode(['error' => 'Failed to delete Item']);
         }
         break;
 }

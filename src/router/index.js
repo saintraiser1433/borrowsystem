@@ -13,6 +13,13 @@ const routes = [
     meta: { title: 'Manage Student',subtitle: 'Lorem ipsum dolor sit amet consectetur adipisicing elit. ' },
   },
   {
+    path: '/category',
+    name: 'Category',
+    component: () => import(/* webpackChunkName: "category" */ '@/views/Categories.vue'),
+    meta: { title: 'Manage Category',subtitle: 'Lorem ipsum dolor sit amet consectetur adipisicing elit. ' },
+  },
+  
+  {
     path: '/inventory',
     name: 'Inventory',
     component: () => import(/* webpackChunkName: "inventory" */ '@/views/Inventory.vue'),

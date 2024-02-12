@@ -98,10 +98,17 @@
         </v-row>
         <Suspense>
             <template #default>
-                <InventoryTable :items="items" :headers="header">
-                    <!-- <template v-slot:[`item.fullname`]="{ item }">
-                        {{ item.lname }} {{ item.fname }} {{ item.mname[0] }}
-                    </template> -->
+                <InventoryTable :items="items" :headers="headers">
+                    <template v-slot:[`item.img_path`]="{ item }">
+
+                        <div v-if="item.img_path === null">
+                            <v-img :width="36" :aspect-ratio="1" cover class="mx-auto" src="images/no-image.jpg"></v-img>
+                        </div>
+                        <div v-else>
+                            <v-img :width="36" :aspect-ratio="1" cover class="mx-auto"
+                                :src="`http://localhost/borrowing-api/inventory/${item.img_path}`"></v-img>
+                        </div>
+                    </template>
                     <template v-slot:[`item.actions`]="{ item }">
                         <v-icon class="me-2 bg-yellow-darken-4 rounded-circle" @click="editItem(item)">
                             mdi-pencil
@@ -121,29 +128,38 @@
     
 
 <script setup>
+//imports
 import TitleBar from '@/components/TitleBar.vue'
 import Popup from '@/components/Popup.vue'
-import { condition, status } from '@/constants/Inventory/selection'
-import { tableHeaders } from '@/constants/Inventory/headers'
-import { ref, defineAsyncComponent } from 'vue'
+import { condition, status } from '@/constants/selection'
+import { tableHeaders } from '@/constants/headers'
+import { ref, defineAsyncComponent, onMounted } from 'vue'
 import { useForm, useField } from 'vee-validate'
 import { useFileUploader } from '@/composable/useFileUploader'
 import { useModal } from '@/composable/useModal'
-import { api } from '@/axios/axios'
+import { useAxios } from '@/composable/useAxios'
+import { Toaster } from '@/composable/useToast'
 import * as yup from 'yup'
+import Swal from 'sweetalert2'
+import { development } from '@/constants/server'
 
+import { watchEffect } from 'vue'
+//init
 const conditionItem = ref(condition)
 const statusItem = ref(status)
-const header = ref(tableHeaders)
+const headers = ref(tableHeaders)
 const uploader = ref(null);
-
+const items = ref([]);
 const InventoryTable = defineAsyncComponent({
     loader: () => import('@/components/Table.vue')
 })
+//composables
+const { ModalTitle, isActive, openModal, closeModal, updateModal, isUpdate } = useModal('Assets')
+const { filePreview, filePath, uploadFile, generateFileName } = useFileUploader(isActive)
+const { useToaster } = Toaster();
 
-const { ModalTitle, isActive, openModal, closeModal } = useModal('Assets')
-const { filePreview, filePath, uploadFile } = useFileUploader(isActive)
-const yupSchema = yup.object({
+//forms and validation
+const yupSchema = yup.object().shape({
     asset_tag: yup.number().required(),
     item_name: yup.string().required(),
     category_id: yup.number().required(),
@@ -151,7 +167,7 @@ const yupSchema = yup.object({
     item_condition: yup.string().required(),
     status: yup.number().required(),
     description: yup.string().required(),
-    img_path: yup.string()
+    img_path: yup.mixed().notRequired()
 });
 
 const { handleSubmit, setValues } = useForm({
@@ -165,30 +181,149 @@ const itemModel = useField('item_model');
 const itemCondition = useField('item_condition');
 const statusDescription = useField('status');
 const description = useField('description');
-setValues('img_path', filePath.value)
 
+
+
+//end
+
+
+//methods
 const clickFile = () => {
     uploader.value.click();
 }
-
-const onSubmit = handleSubmit(async (values) => {
-   
-    const response = await api({
-        method:'POST',
-        api:'inventory',
-        data: values
-    })
-    if (!response.ok) {
-        alert(response.error.data.messages.error); // Corrected alert function call
-        return false;
+const fetchInventory = async () => {
+    const response = await useAxios({
+        method: 'GET',
+        api: '/inventory/?action=GET'
+    });
+    if (response.ok) {
+        items.value = response.data
+    } else {
+        useToaster(response.error, 'error');
     }
+}
+const onSubmit = handleSubmit(async (values) => {
+    if (isUpdate.value) {
+        onUpdate(values);
+    } else {
+        onInsert(values);
+    }
+    closeModal();
 });
 
 
+const onUpdate = async (values) => {
+    const formData = new FormData();
+    formData.append('data', JSON.stringify(values));
+    formData.append('files', filePath.value);
+    const response = await useAxios({
+        method: 'POST',
+        api: '/inventory/?action=PUT',
+        data: formData,
+        header: {
+            'Content-Type': 'multipart/form-data'
+        },
+    });
+    if (response.ok) {
+        const findIndex = items.value.findIndex((res) => res.asset_tag === values.asset_tag)
+        items.value[findIndex] = { ...values }
+        useToaster(response.data.message, 'success');
+    } else {
+        useToaster(response.error, 'error');
+    }
+}
+
+const onInsert = async (values) => {
+    const formData = new FormData();
+    formData.append('data', JSON.stringify(values));
+    formData.append('files', filePath.value);
+    const response = await useAxios({
+        method: 'POST',
+        api: '/inventory/?action=POST',
+        data: formData,
+        header: {
+            'Content-Type': 'multipart/form-data'
+        },
+    });
+    if (response.ok) {
+        useToaster(response.data.message, 'success');
+        items.value.push({ ...values })
+        closeModal();
+    } else {
+        useToaster(response.error, 'error');
+    }
+}
+
+
+const deleteAsset = async (asset_tag) => {
+    const response = await useAxios({
+        method: 'DELETE',
+        api: '/inventory/?action=DELETE',
+        params: {
+            asset_tag: asset_tag
+        }
+    });
+    if (response.ok) {
+        useToaster(response.data.message, 'success');
+        items.value = items.value.filter(res => res.asset_tag !== asset_tag)
+    } else {
+        useToaster(response.error, 'error');
+    }
+}
 
 
 
+const deleteItem = (asset_tag) => {
+    Swal.fire({
+        title: "Are you sure?",
+        text: "You want to delete this asset?",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#3085d6",
+        cancelButtonColor: "#d33",
+        confirmButtonText: "Yes, delete it!"
+    }).then((result) => {
+        if (result.isConfirmed) {
+            deleteAsset(asset_tag);
+        }
+    });
+}
 
+const editItem = (item) => {
+    setValues({
+        asset_tag: item.asset_tag,
+        item_name: item.item_name,
+        category_id: item.category_id,
+        item_model: item.item_model,
+        item_condition: item.item_condition,
+        status: item.status,
+        description: item.description,
+        img_path: item.img_path
+    });
+    if(item.img_path === null){
+        filePreview.value = 'images/no-image.jpg'
+    }else{
+        filePreview.value = `${development.baseUrl}/inventory/${item.img_path}`
+    }
+    updateModal();
+}
+
+watchEffect(() => {
+    setValues({
+        img_path: generateFileName.value,
+    });
+});
+
+//end
+
+
+//lifecycle hook
+onMounted(() => {
+    fetchInventory();
+
+})
+
+//end
 
 </script>
 
