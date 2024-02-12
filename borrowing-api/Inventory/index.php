@@ -15,6 +15,7 @@ $json_data = file_get_contents("php://input");
 $data = json_decode($json_data, true);
 switch ($action) {
     case 'GET':
+<<<<<<< HEAD
         $sql = "SELECT asset_tag,item_name,category_id,item_model,item_condition,status,description,img_path FROM tbl_inventory ";
         $rs = $conn->query($sql);
         $data = [];
@@ -32,9 +33,51 @@ switch ($action) {
                     'description' => $row['description'],
                     'img_path' => $row['img_path'],
                 ];
+=======
+        if (isset($_GET['asset_tag'])) {
+            $id = $_GET['asset_tag'];
+            $sql = "SELECT asset_tag,item_name,category_id,item_model,item_condition,status,description,img_path FROM tbl_inventory where asset_tag = $0z ";
+            $rs = $conn->query($sql);
+            $data = [];
+            if ($rs) {
+                while ($row = $rs->fetch_assoc()) {
+                    // Assuming your resident table has 'id', 'name', and 'age' columns
+                    $data[] = [
+                        'asset_tag' => $row['asset_tag'],
+                        'item_name' => $row['item_name'],
+                        'category_id' => $row['category_id'],
+                        'item_model' => $row['item_model'],
+                        'item_condition' => $row['item_condition'],
+                        'status' => $row['status'],
+                        'description' => $row['description'],
+                        'img_path' => $row['img_path'],
+                    ];
+                }
+                echo json_encode($data);
+>>>>>>> bfa8d6e952ec24ae8d4c55776d641e9a72e52bc6
             }
+        } else {
+            $sql = "SELECT asset_tag,item_name,category_id,item_model,item_condition,status,description,img_path FROM tbl_inventory ";
+            $rs = $conn->query($sql);
+            $data = [];
+
+            if ($rs) {
+                while ($row = $rs->fetch_assoc()) {
+                    // Assuming your resident table has 'id', 'name', and 'age' columns
+                    $data[] = [
+                        'asset_tag' => $row['asset_tag'],
+                        'item_name' => $row['item_name'],
+                        'category_id' => $row['category_id'],
+                        'item_model' => $row['item_model'],
+                        'item_condition' => $row['item_condition'],
+                        'status' => $row['status'],
+                        'description' => $row['description'],
+                        'img_path' => $row['img_path'],
+                    ];
+                }
+            }
+            echo json_encode($data);
         }
-        echo json_encode($data);
         break;
     case 'POST':
         $fetch = json_decode($_POST['data'], true);

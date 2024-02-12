@@ -65,7 +65,7 @@
 //imports
 import TitleBar from '@/components/TitleBar.vue'
 import Popup from '@/components/Popup.vue'
-import { headerCategory } from '@/constants/Inventory/headers'
+import { headerCategory } from '@/constants/headers'
 import { ref, defineAsyncComponent, onMounted } from 'vue'
 import { useForm, useField } from 'vee-validate'
 import { useModal } from '@/composable/useModal'

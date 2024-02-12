@@ -131,8 +131,8 @@
 //imports
 import TitleBar from '@/components/TitleBar.vue'
 import Popup from '@/components/Popup.vue'
-import { condition, status } from '@/constants/Inventory/selection'
-import { headerInventory } from '@/constants/Inventory/headers'
+import { condition, status } from '@/constants/selection'
+import { headerInventory } from '@/constants/headers'
 import { ref, defineAsyncComponent, onMounted } from 'vue'
 import { useForm, useField } from 'vee-validate'
 import { useFileUploader } from '@/composable/useFileUploader'
