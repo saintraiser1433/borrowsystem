@@ -1,5 +1,6 @@
 <template>
   <v-app>
+    
     <Navbar />
     <div class="bg-grey-lighten-4 h-100">
       <v-main class="my-4 mx-4">

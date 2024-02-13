@@ -226,8 +226,9 @@ const onUpdate = async (values) => {
         },
     });
     if (response.ok) {
-        const findIndex = items.value.findIndex((res) => res.asset_tag === values.asset_tag)
-        items.value[findIndex] = { ...values }
+        // const findIndex = items.value.findIndex((res) => res.asset_tag === values.asset_tag)
+        // items.value[findIndex] = { ...values }
+        fetchInventory();
         useToaster(response.data.message, 'success');
     } else {
         useToaster(response.error, 'error');
@@ -247,8 +248,8 @@ const onInsert = async (values) => {
         },
     });
     if (response.ok) {
+        fetchInventory();
         useToaster(response.data.message, 'success');
-        items.value.push({ ...values })
         closeModal();
     } else {
         useToaster(response.error, 'error');
@@ -265,8 +266,8 @@ const deleteAsset = async (asset_tag) => {
         }
     });
     if (response.ok) {
+        fetchInventory();
         useToaster(response.data.message, 'success');
-        items.value = items.value.filter(res => res.asset_tag !== asset_tag)
     } else {
         useToaster(response.error, 'error');
     }

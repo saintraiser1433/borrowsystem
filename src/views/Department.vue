@@ -5,17 +5,18 @@
                 <TitleBar />
             </v-col>
             <v-col cols="auto">
-                <Popup :title="ModalTitle" btnName="Add Department" @toggleModal="openModal" v-model="isActive" :width="480">
+                <Popup :title="ModalTitle" btnName="Add Department" @toggleModal="openModal" v-model="isActive"
+                    :width="480">
                     <template #body>
                         <v-form @submit.prevent="onSubmit">
                             <v-row>
                                 <v-col cols="12">
                                     <div class="text-subtitle-1 text-medium-emphasis">Description</div>
-                                    <v-text-field density="compact" variant="outlined" v-model="description.value.value"
-                                        :error-messages="description.errorMessage.value">
+                                    <v-text-field density="compact" variant="outlined" v-model="description"
+                                        v-bind="descriptionAttrs" :error-messages="errors.description">
                                     </v-text-field>
-                                    <v-switch v-model="status.value.value" hide-details true-value="1" false-value="0"
-                                        defaults-target="1" color="primary" label="Active"></v-switch>
+                                    <v-switch v-model="status" v-bind="statusAttrs" hide-details true-value="1"
+                                        false-value="0" color="primary" label="Active"></v-switch>
                                 </v-col>
 
                             </v-row>
@@ -31,7 +32,7 @@
         </v-row>
         <Suspense>
             <template #default>
-                <CategoryTable :items="items" :headers="headers">
+                <DepartmentTable :items="items" :headers="headers">
                     <template v-slot:[`item.description`]="{ item }">
                         <span class="text-capitalize">{{ item.description }}</span>
                     </template>
@@ -47,11 +48,11 @@
                         <v-icon class="me-2 bg-yellow-darken-4 rounded-circle" @click="editItem(item)">
                             mdi-pencil
                         </v-icon>
-                        <v-icon class="bg-red-darken-2 rounded-circle" @click="deleteItem(item.categoryId)">
+                        <v-icon class="bg-red-darken-2 rounded-circle" @click="deleteItem(item.departmentId)">
                             mdi-delete
                         </v-icon>
                     </template>
-                </CategoryTable>
+                </DepartmentTable>
             </template>
             <template #fallback>
                 <p>Loading</p>
@@ -62,12 +63,11 @@
     
 
 <script setup>
-//imports
 import TitleBar from '@/components/TitleBar.vue'
 import Popup from '@/components/Popup.vue'
-import { headerCategory } from '@/constants/headers'
-import { ref, defineAsyncComponent, onMounted } from 'vue'
-import { useForm, useField } from 'vee-validate'
+import { headerDepartment } from '@/constants/headers'
+import { ref, defineAsyncComponent, onMounted, watch } from 'vue'
+import { useForm } from 'vee-validate'
 import { useModal } from '@/composable/useModal'
 import { useAxios } from '@/composable/useAxios'
 import { Toaster } from '@/composable/useToast'
@@ -75,40 +75,35 @@ import * as yup from 'yup'
 import Swal from 'sweetalert2'
 
 //init
-const headers = ref(headerCategory)
+const headers = ref(headerDepartment)
 const items = ref([]);
-const CategoryTable = defineAsyncComponent({
+const DepartmentTable = defineAsyncComponent({
     loader: () => import('@/components/Table.vue')
 })
+
 //composables
-const { ModalTitle, isActive, openModal, closeModal, updateModal, isUpdate } = useModal('Category')
+const { ModalTitle, openModal, closeModal, updateModal, isUpdate, isActive } = useModal('Department')
 const { useToaster } = Toaster();
 
 //forms and validation
 const yupSchema = yup.object().shape({
-    categoryId: yup.number().notRequired(),
+    departmentId: yup.number().notRequired(),
     description: yup.string().required(),
     status: yup.number().notRequired(),
 });
 
-const { handleSubmit, setValues } = useForm({
+const { handleSubmit, setValues, defineField, errors, resetForm } = useForm({
     validationSchema: yupSchema
 });
 
-const description = useField('description');
-const status = useField('status');
-setValues({
-    status: 1
-})
-
-
-
+const [description, descriptionAttrs] = defineField('description');
+const [status, statusAttrs] = defineField('status');
 
 //methods
-const fetchCategory = async () => {
+const fetchDepartment = async () => {
     const response = await useAxios({
         method: 'GET',
-        api: '/category.php?action=GET'
+        api: '/department?action=GET'
     });
     if (response.ok) {
         items.value = response.data
@@ -129,13 +124,12 @@ const onSubmit = handleSubmit(async (values) => {
 const onUpdate = async (values) => {
     const response = await useAxios({
         method: 'POST',
-        api: '/category?action=PUT',
+        api: '/department?action=PUT',
         data: values,
     });
     if (response.ok) {
-        const findIndex = items.value.findIndex((res) => res.categoryId === values.categoryId)
-        items.value[findIndex] = { ...values }
         useToaster(response.data.message, 'success');
+        fetchDepartment();
     } else {
         useToaster(response.error, 'error');
     }
@@ -144,22 +138,23 @@ const onUpdate = async (values) => {
 const onInsert = async (values) => {
     const response = await useAxios({
         method: 'POST',
-        api: '/category?action=POST',
+        api: '/department?action=POST',
         data: values,
     });
     if (response.ok) {
         useToaster(response.data.message, 'success');
-        items.value.push({ ...values })
+        fetchDepartment();
         closeModal();
     } else {
         useToaster(response.error, 'error');
     }
 }
 
-const deleteItem = (categoryId) => {
+
+const deleteItem = (departmentId) => {
     Swal.fire({
         title: "Are you sure?",
-        text: "You want to delete this category?",
+        text: "You want to delete this department?",
         icon: "warning",
         showCancelButton: true,
         confirmButtonColor: "#3085d6",
@@ -169,14 +164,14 @@ const deleteItem = (categoryId) => {
         if (result.isConfirmed) {
             const response = await useAxios({
                 method: 'DELETE',
-                api: '/category?action=DELETE',
+                api: '/department?action=DELETE',
                 params: {
-                    categoryId: categoryId
+                    departmentId: departmentId
                 }
             });
             if (response.ok) {
                 useToaster(response.data.message, 'success');
-                items.value = items.value.filter(res => res.categoryId !== categoryId)
+                fetchDepartment()
             } else {
                 useToaster(response.error, 'error');
             }
@@ -186,21 +181,31 @@ const deleteItem = (categoryId) => {
 
 const editItem = (item) => {
     setValues({
-        categoryId: item.categoryId,
+        departmentId: item.departmentId,
         description: item.description,
         status: item.status,
     });
     updateModal();
 }
 
+
+watch([isActive, isUpdate], ([active, update]) => {
+    if (active && !update) {
+        resetForm({
+            values: {
+                departmentId:0,
+                description: '',
+                status: '1'
+            }
+        });
+
+    }
+})
 //end
-
-
 //lifecycle hook
 onMounted(() => {
-    fetchCategory();
+    fetchDepartment();
 })
 
 //end
-
 </script>

@@ -1,5 +1,5 @@
 <template>
-    <v-dialog persistent transition="dialog-bottom-transition" :width="width">
+        <v-dialog persistent transition="dialog-bottom-transition" :width="width">
         <template v-slot:activator="{ props }">
             <v-btn color="primary" v-bind="props" @click="toggleModal">
                 <v-icon left class="mr-2">mdi-account-plus</v-icon>
@@ -16,6 +16,7 @@
             <slot name="footer"></slot>
         </v-card>
     </v-dialog>
+  
 </template>
 
 <script setup>

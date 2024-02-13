@@ -5,17 +5,18 @@
                 <TitleBar />
             </v-col>
             <v-col cols="auto">
-                <Popup :title="ModalTitle" btnName="Add Category" @toggleModal="openModal" v-model="isActive" :width="480">
+                <Popup :title="ModalTitle" btnName="Add Category" @toggleModal="openModal" v-model="isActive"
+                    :width="480">
                     <template #body>
                         <v-form @submit.prevent="onSubmit">
                             <v-row>
                                 <v-col cols="12">
                                     <div class="text-subtitle-1 text-medium-emphasis">Description</div>
-                                    <v-text-field density="compact" variant="outlined" v-model="description.value.value"
-                                        :error-messages="description.errorMessage.value">
+                                    <v-text-field density="compact" variant="outlined" v-model="description"
+                                        v-bind="descriptionAttrs" :error-messages="errors.description">
                                     </v-text-field>
-                                    <v-switch v-model="status.value.value" hide-details true-value="1" false-value="0"
-                                        defaults-target="1" color="primary" label="Active"></v-switch>
+                                    <v-switch v-model="status" v-bind="statusAttrs" hide-details true-value="1"
+                                        false-value="0" color="primary" label="Active"></v-switch>
                                 </v-col>
 
                             </v-row>
@@ -47,7 +48,7 @@
                         <v-icon class="me-2 bg-yellow-darken-4 rounded-circle" @click="editItem(item)">
                             mdi-pencil
                         </v-icon>
-                        <v-icon class="bg-red-darken-2 rounded-circle" @click="deleteItem(item.categoryId)">
+                        <v-icon class="bg-red-darken-2 rounded-circle" @click="deleteItem(item.departmentId)">
                             mdi-delete
                         </v-icon>
                     </template>
@@ -62,12 +63,11 @@
     
 
 <script setup>
-//imports
 import TitleBar from '@/components/TitleBar.vue'
 import Popup from '@/components/Popup.vue'
 import { headerCategory } from '@/constants/headers'
-import { ref, defineAsyncComponent, onMounted } from 'vue'
-import { useForm, useField } from 'vee-validate'
+import { ref, defineAsyncComponent, onMounted, watch } from 'vue'
+import { useForm } from 'vee-validate'
 import { useModal } from '@/composable/useModal'
 import { useAxios } from '@/composable/useAxios'
 import { Toaster } from '@/composable/useToast'
@@ -80,8 +80,9 @@ const items = ref([]);
 const CategoryTable = defineAsyncComponent({
     loader: () => import('@/components/Table.vue')
 })
+
 //composables
-const { ModalTitle, isActive, openModal, closeModal, updateModal, isUpdate } = useModal('Category')
+const { ModalTitle, openModal, closeModal, updateModal, isUpdate, isActive } = useModal('Category')
 const { useToaster } = Toaster();
 
 //forms and validation
@@ -91,24 +92,18 @@ const yupSchema = yup.object().shape({
     status: yup.number().notRequired(),
 });
 
-const { handleSubmit, setValues } = useForm({
+const { handleSubmit, setValues, defineField, errors, resetForm } = useForm({
     validationSchema: yupSchema
 });
 
-const description = useField('description');
-const status = useField('status');
-setValues({
-    status: 1
-})
-
-
-
+const [description, descriptionAttrs] = defineField('description');
+const [status, statusAttrs] = defineField('status');
 
 //methods
 const fetchCategory = async () => {
     const response = await useAxios({
         method: 'GET',
-        api: '/category.php?action=GET'
+        api: '/category?action=GET'
     });
     if (response.ok) {
         items.value = response.data
@@ -133,9 +128,8 @@ const onUpdate = async (values) => {
         data: values,
     });
     if (response.ok) {
-        const findIndex = items.value.findIndex((res) => res.categoryId === values.categoryId)
-        items.value[findIndex] = { ...values }
         useToaster(response.data.message, 'success');
+        fetchCategory();
     } else {
         useToaster(response.error, 'error');
     }
@@ -149,12 +143,13 @@ const onInsert = async (values) => {
     });
     if (response.ok) {
         useToaster(response.data.message, 'success');
-        items.value.push({ ...values })
+        fetchCategory();
         closeModal();
     } else {
         useToaster(response.error, 'error');
     }
 }
+
 
 const deleteItem = (categoryId) => {
     Swal.fire({
@@ -176,7 +171,7 @@ const deleteItem = (categoryId) => {
             });
             if (response.ok) {
                 useToaster(response.data.message, 'success');
-                items.value = items.value.filter(res => res.categoryId !== categoryId)
+                fetchCategory()
             } else {
                 useToaster(response.error, 'error');
             }
@@ -193,14 +188,24 @@ const editItem = (item) => {
     updateModal();
 }
 
+
+watch([isActive, isUpdate], ([active, update]) => {
+    if (active && !update) {
+        resetForm({
+            values: {
+                categoryId:0,
+                description: '',
+                status: '1'
+            }
+        });
+
+    }
+})
 //end
-
-
 //lifecycle hook
 onMounted(() => {
     fetchCategory();
 })
 
 //end
-
 </script>

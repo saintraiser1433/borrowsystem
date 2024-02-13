@@ -31,6 +31,16 @@ const routes = [
     },
   },
   {
+    path: "/department",
+    name: "Department",
+    component: () =>
+      import(/* webpackChunkName: "students" */ "@/views/Department.vue"),
+    meta: {
+      title: "Manage Department",
+      subtitle: "Lorem ipsum dolor sit amet consectetur adipisicing elit. ",
+    },
+  },
+  {
     path: "/inventory",
     name: "Inventory",
     component: () =>
@@ -71,6 +81,7 @@ const routes = [
       subtitle: "Lorem ipsum dolor sit amet consectetur adipisicing elit. ",
     },
   },
+  { path: '/:pathMatch(.*)*', component: () => import(/* webpackChunkName: "transaction" */ "@/views/PageNotFound.vue"), },
 ];
 
 const router = createRouter({
