@@ -5,7 +5,7 @@
                 <TitleBar />
             </v-col>
             <v-col cols="auto">
-                <Popup :title="ModalTitle" btnName="Add Category" @toggleModal="openModal" v-model="isActive" :width="480">
+                <Popup :title="ModalTitle" btnName="Add Department" @toggleModal="openModal" v-model="isActive" :width="480">
                     <template #body>
                         <v-form @submit.prevent="onSubmit">
                             <v-row>
